@@ -1,0 +1,26 @@
+[project]
+name = "transaction-processing-service"
+version = "0.1.0"
+description = "Production-grade transaction processing service with clean architecture (Fintech AI portfolio)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi[standard]>=0.136.1",
+    "pydantic-settings>=2.14.1",
+    "python-dotenv>=1.2.2",
+    "structlog>=25.5.0",
+]
+
+# === Dev dependencies (new correct way) ===
+[dependency-groups]
+dev = [
+    "black>=26.3.1",
+    "pre-commit>=4.6.0",
+    "pytest>=9.0.3",
+    "ruff>=0.15.12",
+]
+
+# === Package discovery for src/ layout ===
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["app*"]
