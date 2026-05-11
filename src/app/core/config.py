@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 
+
 class Settings(BaseSettings):
     APP_NAME: str = "Transaction Processing Service"
     ENVIRONMENT: str = "development"
@@ -13,6 +14,7 @@ class Settings(BaseSettings):
         env_ignore_empty=True,
         extra="ignore",
     )
+
 
 @lru_cache
 def get_settings() -> Settings:

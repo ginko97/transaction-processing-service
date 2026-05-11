@@ -6,7 +6,7 @@
 
 ## Overview
 
-Clean Architecture (`src/` layout) backend service designed with real production standards in mind.  
+Clean Architecture (`src/` layout) backend service designed with real production standards in mind.
 This skeleton will be extended with:
 - Real-time transaction processing (Kafka)
 - Fraud detection (Classical ML + LLM)

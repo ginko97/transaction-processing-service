@@ -5,12 +5,14 @@ from contextlib import asynccontextmanager
 from .core.config import get_settings
 from .core.logger import setup_logging, logger
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging()
     logger.info("Service starting up", extra={"env": get_settings().ENVIRONMENT})
     yield
     logger.info("Service shutting down")
+
 
 app = FastAPI(
     title=get_settings().APP_NAME,
@@ -26,6 +28,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/health")
 async def health_check():
     return {
@@ -33,6 +36,7 @@ async def health_check():
         "environment": get_settings().ENVIRONMENT,
         "version": get_settings().VERSION,
     }
+
 
 @app.get("/")
 async def root():

@@ -1,5 +1,6 @@
 import structlog
 
+
 def setup_logging():
     structlog.configure(
         processors=[
@@ -11,5 +12,6 @@ def setup_logging():
         logger_factory=structlog.PrintLoggerFactory(),
         cache_logger_on_first_use=True,
     )
+
 
 logger = structlog.get_logger()
