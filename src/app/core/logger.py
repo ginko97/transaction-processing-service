@@ -1,8 +1,6 @@
 import structlog
-from structlog import get_logger
 
 def setup_logging():
-    """Config structured logging for production"""
     structlog.configure(
         processors=[
             structlog.contextvars.merge_contextvars,
@@ -14,4 +12,4 @@ def setup_logging():
         cache_logger_on_first_use=True,
     )
 
-logger = get_logger()
+logger = structlog.get_logger()
