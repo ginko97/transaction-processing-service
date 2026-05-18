@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 from .core.config import get_settings
 from .core.logger import setup_logging, logger
+from .api.v1.transaction import router as transaction_router
 
 
 @asynccontextmanager
@@ -27,6 +28,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(transaction_router)
 
 
 @app.get("/health")
