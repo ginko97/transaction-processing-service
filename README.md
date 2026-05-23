@@ -6,12 +6,11 @@
 
 ## Overview
 
-Clean Architecture (`src/` layout) backend service designed with real production standards in mind.
-This skeleton will be extended with:
-- Real-time transaction processing (Kafka)
-- Fraud detection (Classical ML + LLM)
-- RAG/Agent capabilities
-- Full MLOps pipeline
+A clean architecture transaction processing service with:
+- Real-time transaction validation API
+- PostgreSQL persistence with SQLAlchemy + Alembic
+- Statistical analytics & risk scoring
+- Ready for ML models and LLM agents
 
 ## Architecture
 
@@ -19,20 +18,23 @@ This skeleton will be extended with:
 flowchart TD
     subgraph Client["External Clients"]
         A[Mobile / Web Apps]
-        B[Payment Partners & Banks]
+        B[Payment Partners]
     end
 
     subgraph API["FastAPI Service"]
         C[API Layer<br/>/api/v1]
-        D[Core Layer<br/>config, logger, security]
+        D[Core Layer<br/>config, logger, database]
         E[Schemas<br/>Pydantic v2]
     end
 
-    subgraph Data["Data & Future Components"]
+    subgraph Data["Data Layer"]
         F[(PostgreSQL)]
-        G[Kafka Streams]
-        H[ML Models & Feature Store]
-        I[LLM Agents]
+    end
+
+    subgraph Analytics["Analytics & ML"]
+        G[Statistics Endpoint]
+        H[Fraud Risk Scoring]
+        I[Future ML Models]
     end
 
     A --> C
@@ -42,7 +44,7 @@ flowchart TD
     C --> E
 
     D --> F
-    D --> G
-    D --> H
-    D --> I
+
+    C --> G
+    C --> H
 ```
