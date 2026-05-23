@@ -23,9 +23,9 @@ flowchart TD
     end
 
     subgraph API["FastAPI Service"]
-        C[API Layer\n/api/v1]
-        D[Core Layer\nconfig, logger, security]
-        E[Schemas\nPydantic v2]
+        C[API Layer<br/>/api/v1]
+        D[Core Layer<br/>config, logger, security]
+        E[Schemas<br/>Pydantic v2]
     end
 
     subgraph Data["Data & Future Components"]
@@ -35,6 +35,14 @@ flowchart TD
         I[LLM Agents]
     end
 
-    A & B --> C
-    C --> D & E
-    D --> F & G & H & I
+    A --> C
+    B --> C
+
+    C --> D
+    C --> E
+
+    D --> F
+    D --> G
+    D --> H
+    D --> I
+```

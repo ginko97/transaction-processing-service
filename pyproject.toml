@@ -5,9 +5,12 @@ description = "Production-grade transaction processing service with clean archit
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "alembic>=1.18.4",
     "fastapi[standard]>=0.136.1",
+    "psycopg[binary]>=3.3.4",
     "pydantic-settings>=2.14.1",
     "python-dotenv>=1.2.2",
+    "sqlalchemy>=2.0.49",
     "structlog>=25.5.0",
 ]
 
@@ -18,6 +21,7 @@ dev = [
     "pre-commit>=4.6.0",
     "pytest>=9.0.3",
     "ruff>=0.15.12",
+    "types-psycopg2>=2.9.21.20260518",
 ]
 
 # === Package discovery for src/ layout ===

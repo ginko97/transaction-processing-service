@@ -8,6 +8,10 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     VERSION: str = "0.1.0"
     POSTGRES_URL: str = "postgresql+psycopg://user:pass@localhost:5432/transactions"
+    DATABASE_URL: str = (
+        "postgresql+psycopg://postgres:postgres@localhost:5432/transaction_db"
+    )
+    DB_ECHO: bool = True
 
     model_config = SettingsConfigDict(
         env_file=".env",
