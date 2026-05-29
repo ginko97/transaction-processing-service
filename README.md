@@ -1,16 +1,41 @@
 # Transaction Processing Service
 
-**Production-grade FastAPI template** built as the foundation for my **AI Engineer / ML Engineer portfolio** (Fintech domain).
+**Production-grade FastAPI + ML backend** — Core project for my **AI/ML Engineer portfolio** (Fintech domain).
 
 ---
 
 ## Overview
 
-A clean architecture transaction processing service with:
-- Real-time transaction validation API
-- PostgreSQL persistence with SQLAlchemy + Alembic
-- Statistical analytics & risk scoring
-- Ready for ML models and LLM agents
+End-to-end transaction processing system with validation, persistence, statistical analytics, and **machine learning-powered fraud detection**.
+
+**Current Progress:** End of **Week 4 (Month 1)** — Classical Machine Learning.
+
+## Features
+
+### Production Python & FastAPI
+
+* `POST /transactions/validate` — Rule-based risk scoring
+* Structured logging
+* Pydantic v2 validation
+
+### Data Layer
+
+* PostgreSQL
+* SQLAlchemy ORM
+* Alembic migrations
+* Automatic transaction persistence
+
+### Statistics & Analytics
+
+* `GET /transactions/stats` — Statistical analytics
+* Distribution analysis
+* Anomaly detection
+
+### Machine Learning
+
+* Feature engineering pipeline
+* **XGBoost fraud detection model**
+* `POST /transactions/predict` — Real-time fraud prediction
 
 ## Architecture
 
@@ -31,20 +56,70 @@ flowchart TD
         F[(PostgreSQL)]
     end
 
-    subgraph Analytics["Analytics & ML"]
-        G[Statistics Endpoint]
-        H[Fraud Risk Scoring]
-        I[Future ML Models]
+    subgraph ML["Machine Learning Layer"]
+        G[Feature Engineering]
+        H[XGBoost Fraud Model]
+        I[Real-time Prediction]
     end
 
     A --> C
     B --> C
-
     C --> D
     C --> E
-
     D --> F
-
     C --> G
-    C --> H
+    G --> H
+    H --> I
 ```
+
+## API Endpoints
+
+| Method | Endpoint                 | Description                       |
+| ------ | ------------------------ | --------------------------------- |
+| POST   | `/transactions/validate` | Validate and persist transactions |
+| GET    | `/transactions/stats`    | Statistical analytics             |
+| POST   | `/transactions/predict`  | ML-powered fraud prediction       |
+
+## Tech Stack
+
+### Backend
+
+* FastAPI
+* Uvicorn
+
+### Database
+
+* PostgreSQL
+* SQLAlchemy
+* Alembic
+
+### Machine Learning
+
+* XGBoost
+* scikit-learn
+* pandas
+
+### Tooling
+
+* uv
+* Docker
+* pre-commit
+* GitHub Actions
+
+## Quick Start
+
+```bash
+# Start PostgreSQL
+docker compose up -d postgres
+
+# Install dependencies
+uv sync
+
+# Apply database migrations
+uv run alembic upgrade head
+
+# Run API
+uv run uvicorn src.app.main:app --reload
+```
+
+---
