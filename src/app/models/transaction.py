@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Text, DECIMAL
-from datetime import datetime
+from datetime import datetime, timezone
 from ..core.database import Base
 
 
@@ -15,4 +15,4 @@ class TransactionModel(Base):
     description = Column(Text)
     risk_score = Column(Float)
     status = Column(String(20), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

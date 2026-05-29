@@ -10,9 +10,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, roc_auc_score
 import joblib
 
-from src.app.ml.features.feature_engineering import create_features
-from src.app.ml.data.loader import load_transactions_for_training
-from src.app.core.database import SessionLocal
+from app.ml.features.feature_engineering import create_features
+from app.ml.data.loader import load_transactions_for_training
+from app.core.database import SessionLocal
 
 
 def train_fraud_model(db, test_size: float = 0.3):

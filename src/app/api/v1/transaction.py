@@ -1,10 +1,8 @@
-import joblib
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request, BackgroundTasks
 from uuid import uuid4
-import re
 import pandas as pd
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, case
 
 from ...schemas.transaction import (
     TransactionValidateRequest,
@@ -14,34 +12,35 @@ from ...schemas.transaction import (
 from ...schemas.transaction import TransactionPredictResponse
 from ...schemas.stats import TransactionStatsResponse, RiskDistribution
 from ...core.logger import logger
-from ...core.database import get_db
+from ...core.database import get_db, SessionLocal
 from ...models.transaction import TransactionModel
 from ...ml.features.feature_engineering import create_features
+from ...core.rules import calculate_risk_score
+from ...ml.models.fraud_model import train_fraud_model
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
-model = None
 
-
-@router.on_event("startup")
-async def load_model():
-    global model
-    try:
-        model = joblib.load("models/fraud_model_latest.joblib")
-        logger.info("Fraud model loaded successfully")
-    except Exception as e:
-        logger.warning(f"Could not load model: {e}. Using rule-based fallback.")
+def get_model(request: Request):
+    return getattr(request.app.state, "model", None)
 
 
 @router.post("/predict", response_model=TransactionPredictResponse)
 async def predict_fraud(
-    request: TransactionValidateRequest, db: Session = Depends(get_db)
+    request: TransactionValidateRequest,
+    db: Session = Depends(get_db),
+    model=Depends(get_model),
 ):
     """Real-time fraud prediction using XGBoost model."""
-    global model
-
     try:
         logger.info("Fraud prediction request", extra={"amount": str(request.amount)})
+
+        # Calculate rule-based risk score for accurate ML prediction features
+        calculated_risk = calculate_risk_score(
+            amount=request.amount,
+            currency=request.currency,
+            card_last4=request.card_last4,
+        )
 
         # Create single row for prediction
         df = pd.DataFrame(
@@ -51,7 +50,7 @@ async def predict_fraud(
                     "currency": request.currency,
                     "merchant_id": request.merchant_id,
                     "customer_id": request.customer_id,
-                    "risk_score": 50.0,  # default or from validation
+                    "risk_score": calculated_risk,
                 }
             ]
         )
@@ -88,7 +87,7 @@ async def predict_fraud(
             transaction_id=str(uuid4()),
             predicted_fraud=is_fraud,
             fraud_probability=round(float(fraud_prob), 4),
-            risk_score=float(request.amount) / 100,  # simple mapping for now
+            risk_score=calculated_risk,
             recommendation=recommendation,
         )
 
@@ -122,16 +121,12 @@ async def validate_transaction(
             },
         )
 
-        # Risk scoring logic
-        risk_score = 12.0
-        if request.amount > 10000:
-            risk_score = 82.0
-        elif request.amount > 5000:
-            risk_score += 35.0
-        if request.currency != "USD":
-            risk_score += 18.0
-        if request.card_last4 and re.match(r"^4[0-9]{3}$", request.card_last4):
-            risk_score -= 5.0
+        # Risk scoring logic using central rules engine
+        risk_score = calculate_risk_score(
+            amount=request.amount,
+            currency=request.currency,
+            card_last4=request.card_last4,
+        )
 
         status = (
             "approved"
@@ -181,19 +176,38 @@ async def validate_transaction(
 async def get_transaction_stats(db: Session = Depends(get_db)):
     """Return advanced statistical analysis of transactions."""
     try:
-        # Basic aggregates
-        total_tx = db.query(func.count(TransactionModel.id)).scalar() or 0
-        total_amount = db.query(func.sum(TransactionModel.amount)).scalar() or 0.0
-        avg_amount = db.query(func.avg(TransactionModel.amount)).scalar() or 0.0
-        max_amount = db.query(func.max(TransactionModel.amount)).scalar() or 0.0
-        min_amount = db.query(func.min(TransactionModel.amount)).scalar() or 0.0
-        avg_risk = db.query(func.avg(TransactionModel.risk_score)).scalar() or 0.0
-        high_risk = (
-            db.query(func.count(TransactionModel.id))
-            .filter(TransactionModel.risk_score >= 70)
-            .scalar()
-            or 0
-        )
+        # Query basic aggregates in a single database round-trip using conditional aggregation
+        aggregates = db.query(
+            func.count(TransactionModel.id).label("total_tx"),
+            func.sum(TransactionModel.amount).label("total_amount"),
+            func.avg(TransactionModel.amount).label("avg_amount"),
+            func.max(TransactionModel.amount).label("max_amount"),
+            func.min(TransactionModel.amount).label("min_amount"),
+            func.avg(TransactionModel.risk_score).label("avg_risk"),
+            func.sum(case((TransactionModel.risk_score >= 70, 1), else_=0)).label(
+                "high_risk"
+            ),
+            func.sum(case((TransactionModel.risk_score < 40, 1), else_=0)).label(
+                "low_risk"
+            ),
+            func.sum(
+                case((TransactionModel.risk_score.between(40, 69.9), 1), else_=0)
+            ).label("medium_risk"),
+            func.sum(case((TransactionModel.risk_score > 85, 1), else_=0)).label(
+                "anomalies"
+            ),
+        ).first()
+
+        total_tx = aggregates.total_tx or 0
+        total_amount = aggregates.total_amount or 0.0
+        avg_amount = aggregates.avg_amount or 0.0
+        max_amount = aggregates.max_amount or 0.0
+        min_amount = aggregates.min_amount or 0.0
+        avg_risk = aggregates.avg_risk or 0.0
+        high_risk = int(aggregates.high_risk or 0)
+        low_risk = int(aggregates.low_risk or 0)
+        medium_risk = int(aggregates.medium_risk or 0)
+        anomalies = int(aggregates.anomalies or 0)
 
         # Status & Currency distribution
         status_dist = dict(
@@ -207,29 +221,6 @@ async def get_transaction_stats(db: Session = Depends(get_db)):
             .all()
         )
 
-        # Risk Distribution
-        low_risk = (
-            db.query(func.count(TransactionModel.id))
-            .filter(TransactionModel.risk_score < 40)
-            .scalar()
-            or 0
-        )
-        medium_risk = (
-            db.query(func.count(TransactionModel.id))
-            .filter(TransactionModel.risk_score.between(40, 69.9))
-            .scalar()
-            or 0
-        )
-        high_risk_count = high_risk  # already calculated
-
-        # Simple Anomaly Detection (risk > 85)
-        anomalies = (
-            db.query(func.count(TransactionModel.id))
-            .filter(TransactionModel.risk_score > 85)
-            .scalar()
-            or 0
-        )
-
         return TransactionStatsResponse(
             total_transactions=total_tx,
             total_amount=float(total_amount),
@@ -241,7 +232,7 @@ async def get_transaction_stats(db: Session = Depends(get_db)):
             status_distribution=status_dist,
             currency_distribution=currency_dist,
             risk_distribution=RiskDistribution(
-                low=low_risk, medium=medium_risk, high=high_risk_count
+                low=low_risk, medium=medium_risk, high=high_risk
             ),
             anomalies_count=anomalies,
         )
@@ -249,3 +240,31 @@ async def get_transaction_stats(db: Session = Depends(get_db)):
     except Exception as e:
         logger.error("Stats calculation failed", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/train")
+async def trigger_training(
+    background_tasks: BackgroundTasks,
+    request: Request,
+):
+    """Asynchronously train the XGBoost model on the database records."""
+
+    def run_training():
+        db_session = SessionLocal()
+        try:
+            logger.info("Starting background fraud model training...")
+            trained_model = train_fraud_model(db_session)
+            if trained_model is not None:
+                request.app.state.model = trained_model
+                logger.info("Successfully retrained and hot-reloaded the fraud model")
+            else:
+                logger.warning(
+                    "Retraining finished but no model was returned (insufficient data)"
+                )
+        except Exception:
+            logger.error("Background fraud model training failed", exc_info=True)
+        finally:
+            db_session.close()
+
+    background_tasks.add_task(run_training)
+    return {"message": "Model training triggered successfully in the background."}

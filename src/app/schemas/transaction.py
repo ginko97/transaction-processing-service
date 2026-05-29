@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from decimal import Decimal
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class TransactionBase(BaseModel):
@@ -23,7 +23,7 @@ class TransactionValidateResponse(BaseModel):
     transaction_id: str
     risk_score: float = Field(..., ge=0, le=100)
     reason: Optional[str] = None
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ErrorResponse(BaseModel):
@@ -37,4 +37,4 @@ class TransactionPredictResponse(BaseModel):
     fraud_probability: float
     risk_score: float
     recommendation: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

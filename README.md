@@ -27,15 +27,16 @@ End-to-end transaction processing system with validation, persistence, statistic
 
 ### Statistics & Analytics
 
-* `GET /transactions/stats` — Statistical analytics
+* `GET /transactions/stats` — High-performance statistical analytics (optimized single-query db aggregation)
 * Distribution analysis
 * Anomaly detection
 
 ### Machine Learning
 
-* Feature engineering pipeline
+* Feature engineering pipeline with aligned rule-based scoring feature alignment
 * **XGBoost fraud detection model**
 * `POST /transactions/predict` — Real-time fraud prediction
+* `POST /transactions/train` — Asynchronous background retraining and in-memory model hot-reloading
 
 ## Architecture
 
@@ -76,9 +77,10 @@ flowchart TD
 
 | Method | Endpoint                 | Description                       |
 | ------ | ------------------------ | --------------------------------- |
-| POST   | `/transactions/validate` | Validate and persist transactions |
-| GET    | `/transactions/stats`    | Statistical analytics             |
-| POST   | `/transactions/predict`  | ML-powered fraud prediction       |
+| POST   | `/transactions/validate` | Validate and persist transactions                          |
+| GET    | `/transactions/stats`    | Statistical analytics                                      |
+| POST   | `/transactions/predict`  | ML-powered fraud prediction                                |
+| POST   | `/transactions/train`    | Trigger asynchronous XGBoost training and model hot-reload |
 
 ## Tech Stack
 
