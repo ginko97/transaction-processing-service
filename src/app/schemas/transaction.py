@@ -29,3 +29,12 @@ class TransactionValidateResponse(BaseModel):
 class ErrorResponse(BaseModel):
     error: str
     detail: Optional[str] = None
+
+
+class TransactionPredictResponse(BaseModel):
+    transaction_id: str
+    predicted_fraud: bool
+    fraud_probability: float
+    risk_score: float
+    recommendation: str
+    timestamp: datetime = Field(default_factory=datetime.utcnow)

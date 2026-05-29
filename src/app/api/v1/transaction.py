@@ -1,6 +1,8 @@
+import joblib
 from fastapi import APIRouter, HTTPException, Depends
 from uuid import uuid4
 import re
+import pandas as pd
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -9,12 +11,96 @@ from ...schemas.transaction import (
     TransactionValidateResponse,
     ErrorResponse,
 )
+from ...schemas.transaction import TransactionPredictResponse
 from ...schemas.stats import TransactionStatsResponse, RiskDistribution
 from ...core.logger import logger
 from ...core.database import get_db
 from ...models.transaction import TransactionModel
+from ...ml.features.feature_engineering import create_features
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
+
+model = None
+
+
+@router.on_event("startup")
+async def load_model():
+    global model
+    try:
+        model = joblib.load("models/fraud_model_latest.joblib")
+        logger.info("Fraud model loaded successfully")
+    except Exception as e:
+        logger.warning(f"Could not load model: {e}. Using rule-based fallback.")
+
+
+@router.post("/predict", response_model=TransactionPredictResponse)
+async def predict_fraud(
+    request: TransactionValidateRequest, db: Session = Depends(get_db)
+):
+    """Real-time fraud prediction using XGBoost model."""
+    global model
+
+    try:
+        logger.info("Fraud prediction request", extra={"amount": str(request.amount)})
+
+        # Create single row for prediction
+        df = pd.DataFrame(
+            [
+                {
+                    "amount": request.amount,
+                    "currency": request.currency,
+                    "merchant_id": request.merchant_id,
+                    "customer_id": request.customer_id,
+                    "risk_score": 50.0,  # default or from validation
+                }
+            ]
+        )
+
+        df = create_features(df)
+
+        feature_cols = [
+            "amount",
+            "amount_log",
+            "risk_score",
+            "risk_score_scaled",
+            "tx_count_customer",
+            "avg_amount_customer",
+            "amount_vs_avg_customer",
+            "hour",
+            "is_night",
+            "high_amount_flag",
+            "high_risk_flag",
+        ]
+
+        X = df[feature_cols]
+
+        if model is not None:
+            fraud_prob = model.predict_proba(X)[0][1]
+            is_fraud = fraud_prob > 0.5
+        else:
+            # Fallback
+            fraud_prob = 0.3 if request.amount < 5000 else 0.75
+            is_fraud = fraud_prob > 0.5
+
+        recommendation = "BLOCK" if is_fraud else "APPROVE"
+
+        response = TransactionPredictResponse(
+            transaction_id=str(uuid4()),
+            predicted_fraud=is_fraud,
+            fraud_probability=round(float(fraud_prob), 4),
+            risk_score=float(request.amount) / 100,  # simple mapping for now
+            recommendation=recommendation,
+        )
+
+        logger.info(
+            "Prediction completed",
+            extra={"fraud_probability": fraud_prob, "recommendation": recommendation},
+        )
+        return response
+
+    except Exception as e:
+        logger.error("Prediction failed", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post(
