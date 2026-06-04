@@ -8,3 +8,12 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Data files
+data/
+*.parquet
+*.csv
+*.db
+__pycache__/
+*.pyc
+.env
