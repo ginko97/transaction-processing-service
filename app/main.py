@@ -3,9 +3,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from .core.config import get_settings
-from .core.logger import setup_logging, logger
-from .api.v1.transaction import router as transaction_router
+from app.core.config import get_settings
+from app.core.logger import setup_logging, logger
+from app.api.v1.transaction import router as transaction_router
 
 
 @asynccontextmanager
