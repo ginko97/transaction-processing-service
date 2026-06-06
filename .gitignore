@@ -17,3 +17,6 @@ data/
 __pycache__/
 *.pyc
 .env
+data/
+*.parquet
+*.csv
