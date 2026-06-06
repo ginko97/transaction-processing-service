@@ -3,7 +3,7 @@ import numpy as np
 
 
 def create_features(df: pd.DataFrame, is_training: bool = True) -> pd.DataFrame:
-    """Create features for fraud detection - works for both training and real-time prediction."""
+    """Create features for fraud detection - works for training and prediction."""
     df = df.copy()
 
     # Convert Decimal to float
@@ -12,11 +12,9 @@ def create_features(df: pd.DataFrame, is_training: bool = True) -> pd.DataFrame:
 
     # Basic features
     df["amount_log"] = np.log1p(df["amount"])
-    df["risk_score_scaled"] = (
-        df["risk_score"] / 100.0 if "risk_score" in df.columns else 0.5
-    )
+    df["risk_score_scaled"] = df.get("risk_score", 50) / 100.0
 
-    # Frequency features (only for training with multiple rows)
+    # Frequency features
     if is_training and "customer_id" in df.columns and len(df) > 1:
         df["tx_count_customer"] = df.groupby("customer_id")["transaction_id"].transform(
             "count"
@@ -26,14 +24,13 @@ def create_features(df: pd.DataFrame, is_training: bool = True) -> pd.DataFrame:
         )
         df["amount_vs_avg_customer"] = df["amount"] - df["avg_amount_customer"]
     else:
-        # For real-time prediction (single row)
         df["tx_count_customer"] = 1
         df["avg_amount_customer"] = df["amount"]
         df["amount_vs_avg_customer"] = 0.0
 
     # Risk level
     df["risk_level"] = pd.cut(
-        df["risk_score"] if "risk_score" in df.columns else 50,
+        df.get("risk_score", 50),
         bins=[0, 30, 60, 100],
         labels=["low", "medium", "high"],
     )

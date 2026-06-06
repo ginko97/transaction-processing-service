@@ -1,6 +1,6 @@
 import pandas as pd
 from sqlalchemy.orm import Session
-from ...models.transaction import TransactionModel
+from app.models.transaction import TransactionModel
 
 
 def load_transactions_for_training(db: Session, limit: int = 10000) -> pd.DataFrame:

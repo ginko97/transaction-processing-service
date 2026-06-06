@@ -1,4 +1,3 @@
-import joblib
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -12,17 +11,6 @@ from app.api.v1.transaction import router as transaction_router
 async def lifespan(app: FastAPI):
     setup_logging()
     logger.info("Service starting up", extra={"env": get_settings().ENVIRONMENT})
-
-    # Load fraud model
-    try:
-        app.state.model = joblib.load("models/fraud_model_latest.joblib")
-        logger.info("Fraud model loaded successfully")
-    except Exception as e:
-        logger.warning(
-            f"Could not load model on startup: {e}. Using rule-based fallback."
-        )
-        app.state.model = None
-
     yield
     logger.info("Service shutting down")
 
