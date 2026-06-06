@@ -2,129 +2,86 @@
 
 **Production-grade FastAPI + Machine Learning backend** for transaction validation, analytics, and real-time fraud detection.
 
+[![Python](https://img.shields.io/badge/Python-3.13+-blue.svg)]()
+[![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green.svg)]()
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue.svg)]()
+[![XGBoost](https://img.shields.io/badge/XGBoost-ML-orange.svg)]()
+
 ---
 
 ## Overview
 
-Transaction Processing Service is an end-to-end backend system that simulates a fintech transaction pipeline. The platform validates incoming transactions, persists data to PostgreSQL, generates statistical insights, and performs real-time fraud detection using a trained XGBoost model.
+An end-to-end transaction processing platform that:
 
-The project demonstrates backend engineering, data engineering, and machine learning integration within a single production-style service.
+* Validates payment transactions
+* Persists transactional data
+* Generates statistical insights
+* Detects fraudulent activity in real time using Machine Learning
+
+This project serves as a portfolio project demonstrating backend engineering, data engineering, and machine learning skills within a fintech domain.
 
 ---
 
-## Core Features
+## Features
 
-### Transaction Validation
+### Transaction Processing
 
-* Validate incoming transaction requests
-* Risk scoring and business rule enforcement
+* Transaction validation API
+* Business rule enforcement
 * Pydantic v2 request/response schemas
 * Structured logging
 
-### Data Persistence
+### Data Layer
 
-* PostgreSQL database
+* PostgreSQL persistence
 * SQLAlchemy ORM
 * Alembic database migrations
-* Dockerized development environment
+* Dockerized local development environment
 
 ### Analytics
 
-* Transaction statistics and aggregation
-* Risk distribution analysis
-* Basic anomaly detection
-* Operational insights API
+* Transaction statistics endpoint
+* Aggregated metrics and reporting
+* Data exploration capabilities
 
 ### Machine Learning
 
 * Feature engineering pipeline
 * XGBoost fraud detection model
-* Scikit-learn preprocessing workflow
 * Real-time prediction endpoint
-
-### Engineering Practices
-
-* Clean project structure
-* Environment-based configuration
-* Pre-commit hooks
-* Docker support
-* GitHub Actions CI/CD
+* Model evaluation and experimentation workflow
 
 ---
 
-## System Architecture
+## Architecture
 
 ```mermaid
 flowchart TD
 
-    Client[Clients]
+    Client["Clients"]
+    API["FastAPI API"]
+    Service["Business Services"]
+    DB[("PostgreSQL")]
+    FE["Feature Engineering"]
+    Model["XGBoost Model"]
 
-    subgraph API["FastAPI Application"]
-        Handler[API Layer]
-        Service[Business Logic]
-        Schema[Pydantic Schemas]
-    end
-
-    subgraph Storage["Persistence Layer"]
-        DB[(PostgreSQL)]
-    end
-
-    subgraph ML["Machine Learning"]
-        FE[Feature Engineering]
-        Model[XGBoost Model]
-        Predict[Fraud Prediction]
-    end
-
-    Client --> Handler
-    Handler --> Schema
-    Handler --> Service
-
+    Client --> API
+    API --> Service
     Service --> DB
 
-    Service --> FE
+    API --> FE
     FE --> Model
-    Model --> Predict
 ```
 
 ---
 
 ## API Endpoints
 
-| Method | Endpoint                 | Description                    |
-| ------ | ------------------------ | ------------------------------ |
-| POST   | `/transactions/validate` | Validate and store transaction |
-| GET    | `/transactions/stats`    | Retrieve transaction analytics |
-| POST   | `/transactions/predict`  | Generate fraud prediction      |
-
----
-
-## Technology Stack
-
-### Backend
-
-* FastAPI
-* Uvicorn
-* Pydantic v2
-
-### Database
-
-* PostgreSQL
-* SQLAlchemy
-* Alembic
-
-### Machine Learning
-
-* XGBoost
-* Scikit-learn
-* Pandas
-* NumPy
-
-### DevOps & Tooling
-
-* Docker
-* uv
-* GitHub Actions
-* pre-commit
+| Method | Endpoint                 | Description                     |
+| ------ | ------------------------ | ------------------------------- |
+| POST   | `/transactions/validate` | Validate and store transactions |
+| GET    | `/transactions/stats`    | Retrieve transaction analytics  |
+| POST   | `/transactions/predict`  | Predict fraud probability       |
 
 ---
 
@@ -155,7 +112,7 @@ uv run alembic upgrade head
 uv run uvicorn app.main:app --reload
 ```
 
-### 5. Open API Documentation
+Swagger UI:
 
 ```text
 http://localhost:8000/docs
@@ -163,24 +120,46 @@ http://localhost:8000/docs
 
 ---
 
-## Example Workflow
+## Tech Stack
 
-1. Submit a transaction for validation
-2. Persist transaction data to PostgreSQL
-3. Generate statistical metrics
-4. Extract fraud-detection features
-5. Run XGBoost inference
-6. Return fraud probability and prediction result
+### Backend
+
+* FastAPI
+* Uvicorn
+* Pydantic v2
+
+### Database
+
+* PostgreSQL
+* SQLAlchemy
+* Alembic
+
+### Machine Learning
+
+* XGBoost
+* scikit-learn
+* pandas
+* NumPy
+
+### DevOps & Tooling
+
+* Docker
+* uv
+* pre-commit
+* GitHub Actions
 
 ---
 
-## Future Enhancements
+## Roadmap
 
-* Redis caching
-* Asynchronous processing with Kafka
-* Model versioning
-* Monitoring and observability
-* Feature store integration
-* Container orchestration with Kubernetes
+* [x] Transaction Validation API
+* [x] PostgreSQL Integration
+* [x] Analytics Endpoint
+* [x] XGBoost Fraud Detection
+* [ ] Model Monitoring
+* [ ] Feature Store
+* [ ] Streaming Ingestion (Kafka)
+* [ ] CI/CD Deployment
+* [ ] Cloud Infrastructure (GCP/AWS)
 
 ---

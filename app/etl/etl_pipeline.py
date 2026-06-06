@@ -33,7 +33,7 @@ def run_data_quality_checks(df: pd.DataFrame) -> dict:
         "Data Quality Check Completed",
         extra={"success_rate": round(success_rate, 2), **checks},
     )
-    print(f"✅ Data Quality Checks - Success Rate: {success_rate:.1f}%")
+    print(f"Data Quality Checks - Success Rate: {success_rate:.1f}%")
 
     return checks
 
@@ -62,7 +62,7 @@ def run_etl_pipeline(db: Session) -> str:
 def extract_transactions(db: Session, limit: int = 10000) -> pd.DataFrame:
     query = db.query(TransactionModel)
     df = pd.read_sql(query.statement, db.bind)
-    print(f"✅ Extracted {len(df)} transactions")
+    print(f"Extracted {len(df)} transactions")
     return df
 
 
@@ -70,17 +70,30 @@ def transform_data(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df["amount"] = df["amount"].astype(float)
     df = create_features(df, is_training=True)
-    print("✅ Data transformation completed")
+    print("Data transformation completed")
     return df
 
 
 def load_to_parquet(df: pd.DataFrame, filename: str | None = None) -> str:
+    """Save clean data to Parquet with Spark compatibility."""
     if filename is None:
         filename = (
             f"data/clean_transactions_{datetime.now().strftime('%Y%m%d_%H%M')}.parquet"
         )
-    df.to_parquet(filename, index=False)
-    print(f"✅ Data saved to {filename}")
+
+    df = df.copy()
+
+    # Fix timestamp for Spark compatibility
+    if "created_at" in df.columns:
+        df["created_at"] = (
+            pd.to_datetime(df["created_at"])
+            .dt.tz_localize(None)
+            .astype("datetime64[ms]")
+        )
+
+    # Save with Spark-compatible settings
+    df.to_parquet(filename, index=False, compression="snappy", engine="pyarrow")
+    print(f"Data saved to {filename} (Spark compatible)")
     return filename
 
 
